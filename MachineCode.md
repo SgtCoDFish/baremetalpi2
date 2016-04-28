@@ -138,7 +138,7 @@ b = 1100 = 110 lower + 0 igore
 2 = 0010 = shift by value in reg 2
 
 
-or r1, 0x00200000 = E3 81 1C 02
+orr r1, 0x00200000 = E3 81 1C 02
 NB: 0x00200000 = 0x1 rot>> 11 = 0x2 rot >> 12
 E = always
 3 = 0011 = 00 + 1 imm + 1 upper opcde
@@ -151,6 +151,8 @@ E = always
 
 0 = 0000 = imm upper
 2 = 0010 = imm lower
+
+
 
 ### Loads
 ldr r1, [r0] = e5 90 10 00
@@ -212,5 +214,5 @@ r2 = 00 02 C3 F2
 ```
 
 ## Resources
-(Machine code lecture)[http://www.ee.ic.ac.uk/pcheung/teaching/ee2_computing/lecture_9.pdf]
-(More indepth details)[http://bear.ces.cwru.edu/eecs_382/ARM7-TDMI-manual-pt2.pdf]
+[Machine code lecture](http://www.ee.ic.ac.uk/pcheung/teaching/ee2_computing/lecture_9.pdf)
+[More indepth details](http://bear.ces.cwru.edu/eecs_382/ARM7-TDMI-manual-pt2.pdf)
