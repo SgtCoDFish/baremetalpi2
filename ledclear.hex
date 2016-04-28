@@ -20,7 +20,7 @@ e2 40 00 04 # sub r0, 0x00000004
 e5 90 10 00 # ldr r1, [r0]
 e3 a0 20 07 # mov r2, 0x07
 e1 c1 17 82 # bic r1, (r2 << 15)
-e3 81 16 02 # orr r1, 0x00200000
+e3 81 19 02 # orr r1, 0x00008000
 e5 80 10 00 # str r1, [r0]
 
 # now place the other bits into the gpclr1 register at 0x3F20002C

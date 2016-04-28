@@ -152,7 +152,18 @@ E = always
 0 = 0000 = imm upper
 2 = 0010 = imm lower
 
+orr r1, r1, 0x00008000 ( 0x8000 == 2 >>rot 18)
+E = always
+3 = 0011 = 00 + 1 imm + 1 upper op
 
+8 = 1000 = 100 lower + 0 ignore cond
+1 = 0001 = op1 r1
+
+1 = 0001 = dst r1
+9 = 1001 = rot right 9 * 2 = 18
+
+0 = 0000 = imm upper
+2 = 0010 = imm lower
 
 ### Loads
 ldr r1, [r0] = e5 90 10 00
