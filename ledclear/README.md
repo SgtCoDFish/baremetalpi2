@@ -145,7 +145,3 @@ E = always
 0 = no offset
 0 = no offset
 ```
-
-# Resources
-- [Machine code lecture](http://www.ee.ic.ac.uk/pcheung/teaching/ee2_computing/lecture_9.pdf)
-- [More indepth details](http://bear.ces.cwru.edu/eecs_382/ARM7-TDMI-manual-pt2.pdf)
