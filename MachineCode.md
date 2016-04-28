@@ -36,7 +36,7 @@ A = 1010 = 101 opcode lower + 0 no set cond
 0 = 0000 = ignore first op reg
 
 0 = 0000 = dst reg = r0
-C = 1100 = rotate 12 right
+6 = 0110 = rotate 6*2=12 right
 
 F = 1111 = immediate value upper nibble
 2 = 0010 = immediate value lower nibble
@@ -49,7 +49,7 @@ E = always
 0 = 0000 = adding value in r0
 
 0 = 0000 = adding value to r0
-4 = 0100 = rot right 4
+2 = 0010 = rot right 2 * 2 = 4
 
 0 = 0000 = imm value upper
 3 = 0011 = imm value lower
@@ -98,7 +98,7 @@ E = always
 1 = 0001 = op1 = r1
 
 1 = 0001 = place into r1
-C = 1100 = rot right 12
+6 = 0110 = rot right 6 * 2 = 12
 
 0 = 0000 = imm upper
 E = 1110 = imm lower
@@ -111,7 +111,7 @@ b = 1100 = 110 lower opcode + 0 ignore cond
 1 = 0001 = op1 = r1
 
 1 = 0001 = place into r1
-C = 1100 = rot right 12
+6 = 0110 = rot right 6 * 2 = 12
 
 0 = 0000 = imm upper
 E = 1110 = imm lower
@@ -147,7 +147,7 @@ E = always
 1 = 0001 = op1 = r1
 
 1 = 0001 = dest = r1
-C = 1100 = rot right 12
+6 = 0110 = rot right 6 * 2 = 12
 
 0 = 0000 = imm upper
 2 = 0010 = imm lower
@@ -213,4 +213,4 @@ r2 = 00 02 C3 F2
 
 ## Resources
 (Machine code lecture)[http://www.ee.ic.ac.uk/pcheung/teaching/ee2_computing/lecture_9.pdf]
-
+(More indepth details)[http://bear.ces.cwru.edu/eecs_382/ARM7-TDMI-manual-pt2.pdf]

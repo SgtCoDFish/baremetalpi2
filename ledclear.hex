@@ -1,14 +1,14 @@
 # load 3f200010 into r0 using immediate addressing
-e3 a0 0c f2 # mov r0, 0x0f200000
-e2 80 04 03 # add r0, 0x30000000
+e3 a0 06 f2 # mov r0, 0x0f200000
+e2 80 02 03 # add r0, 0x30000000
 e2 80 00 10 # add r0, 0x00000010
 
 # load the value at the address in r0 into r1
 e5 90 10 00 # ldr r1, [r0]
 
 # modify; first BIC (i.e. AND NOT), then OR
-e3 b1 1c 0e # bic r1, 0x00E00000
-e3 81 1c 02 # orr r1, 0x00200000
+e3 c1 16 0e # bic r1, 0x00E00000
+e3 81 16 02 # orr r1, 0x00200000
 
 # store the value in r1 into the address in r0
 e5 80 10 00 # str r1, [r0]
@@ -19,14 +19,14 @@ e2 40 00 04 # sub r0, 0x00000004
 # load again then modify and save
 e5 90 10 00 # ldr r1, [r0]
 e1 a0 20 07 # mov r2, 0x07
-e1 b1 17 82 # bic r1, (r2 << 15)
+e1 c1 17 82 # bic r1, (r2 << 15)
 e5 80 10 00 # str r1, [r0]
 
 # now place the other bits into the gpclr1 register at 0x3F20002C
 # set r0 to 0x3F20002C by adding 20
 e2 80 00 20 # add r0, 0x00000020
-e1 a0 20 80 # mov r2, 0x80
-e1 a0 12 02 # mov r1, (r2 << 8)
+#e1 b0 20 80 # mov r2, 0x80
+#e1 a0 12 02 # mov r1, (r2 << 8)
 e5 90 10 00 # ldr r1, [r0]
 
 e3 a0 10 08 # mov r1, 0x00000008
