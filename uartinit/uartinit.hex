@@ -8,3 +8,51 @@
 # 0x3F215044 AUX_MU_IER_REG <- 0
 # 0x3F215048 AUX_MU_IIR_REG <- 0xC6
 # 0x3F215068 AUX_MU_BAUD_REG <- 270
+
+# Do setup
+# AUX_ENABLES
+# mov r1, 0x3F215004
+# mov r0, 1
+# str r0, [r1]
+
+# AUX_MU_IER_REG
+# add r1, 0x40
+# mov r0, 0
+# str r0, [r1]
+
+# AUX_MU_CNTL_REG
+# add r1, 1c
+# str r0, [r1]
+
+# AUX_MU_LCR_REG
+# sub r1, 0x14
+# mov r0, 3
+# str r0, [r1]
+
+# AUX_MU_MCR_REG
+# add r1, 4
+# mov r0, 0
+# str r0, [r1]
+
+# AUX_MU_IER_REG
+# sub r1, C
+# str r0, [r1]
+
+# AUX_MU_IIR_REG
+# add r1, 4
+# mov r0, c6
+# str r0, [r1]
+
+# AUX_MU_BAUD_REG
+# add r1, 0x20
+# mov r0, 270
+# str r0, [r1]
+
+# That's initial registers done, now we need to do a little bit manipulation
+# mov r1, 0x3F200004 # GPFSEL1
+# ldr r0, [r1]
+
+# r0 &= ~(7 << 15)
+# r0 |= (2 << 12)
+# r0 &= ~(7 << 15)
+# r0 |= (1 << 16)
