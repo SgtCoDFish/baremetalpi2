@@ -12,8 +12,13 @@
 # Do setup
 # AUX_ENABLES
 # mov r1, 0x3F215004
-# mov r0, 1
-# str r0, [r1]
+e3 a0 16 f2 # mov r1, 0x0f200000
+e2 80 12 03 # add r1, 0x30000000
+e2 80 1A 15 # add r1, 0x00015000
+e2 80 10 04 # add r1, 0x00000004
+
+e3 a0 00 01  # mov r0, 1
+e5 80 10 00  # str r0, [r1]
 
 # AUX_MU_IER_REG
 # add r1, 0x40
