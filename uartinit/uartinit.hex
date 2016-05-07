@@ -13,48 +13,51 @@
 # AUX_ENABLES
 # mov r1, 0x3F215004
 e3 a0 16 f2 # mov r1, 0x0f200000
-e2 80 12 03 # add r1, 0x30000000
-e2 80 1A 15 # add r1, 0x00015000
-e2 80 10 04 # add r1, 0x00000004
+e2 81 12 03 # add r1, 0x30000000
+e2 81 1A 15 # add r1, 0x00015000
+e2 81 10 04 # add r1, 0x00000004
 
 e3 a0 00 01  # mov r0, 1
 e5 80 10 00  # str r0, [r1]
 
 # AUX_MU_IER_REG
-# add r1, 0x40
-# mov r0, 0
-# str r0, [r1]
+e2 81 10 40 # add r1, 0x40
+e3 a0 00 00 # mov r0, 0
+e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_CNTL_REG
-# add r1, 0x1c
-# str r0, [r1]
+e2 81 10 1c # add r1, 0x1c
+e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_LCR_REG
-# sub r1, 0x14
-# mov r0, 3
-# str r0, [r1]
+e2 41 10 14 # sub r1, 0x14
+e3 a0 00 03 # mov r0, 3
+e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_MCR_REG
-# add r1, 4
-# mov r0, 0
-# str r0, [r1]
+e2 81 10 04 # add r1, 0x4
+e3 a0 00 00 # mov r0, 0
+e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_IER_REG
-# sub r1, C
-# str r0, [r1]
+e2 41 10 0C # sub r1, C
+e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_IIR_REG
-# add r1, 4
-# mov r0, c6
-# str r0, [r1]
+e2 81 10 04 # add r1, 4
+e3 a0 00 c6 # mov r0, c6
+e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_BAUD_REG
-# add r1, 0x20
-# mov r0, 270
-# str r0, [r1]
+e2 81 10 20 # add r1, 0x20
+e3 a0 00 27 #  mov r0, 270 = mov r0, 27 ->  mov r0, r0 << 4
+e1 a0 02 00 # mov r0, r0, 4
+e5 80 10 00 # str r0, [r1]
 
-# That's initial registers done, now we need to do a some bit manipulation
-# mov r1, 0x3F200004 # GPFSEL1
+# Initial registers done, now some bit manipulation
+e3 a0 16 f2 # mov r1, 0x3F200004 # GPFSEL1
+e2 81 12 03 # add r1, 0x30000000
+e2 81 10 04 # add r1, 0x00000004
 # ldr r0, [r1]
 
 # r0 &= ~(7 << 15)
