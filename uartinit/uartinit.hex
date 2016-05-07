@@ -42,7 +42,7 @@ e5 90 10 00 # ldr r1, [r0]
 # 0x3F215050 AUX_MU_MCR_REG <- 0
 # 0x3F215044 AUX_MU_IER_REG <- 0
 # 0x3F215048 AUX_MU_IIR_REG <- 0xC6
-# 0x3F215068 AUX_MU_BAUD_REG <- 270
+# 0x3F215068 AUX_MU_BAUD_REG <- 270, 0x10E
 
 # Do setup
 # AUX_ENABLES
@@ -139,9 +139,9 @@ e5 81 00 00 # str r0, [r1]
 # load r1 with r2 + 0x14 (AUX_MU_LSR_REG (0x3F215054))
 # if AUX_MU_LSR_REG & 0x20, write val to AUX_MU_IO_REG else check again
 e3 a0 26 f2 # mov r2, 0x0F200000
-e2 81 22 03 # add r2, 0x30000000
-e2 81 2a 15 # add r2, 0x00015000
-e2 81 20 40 # add r2, 0x00000040
+e2 82 22 03 # add r2, 0x30000000
+e2 82 2a 15 # add r2, 0x00015000
+e2 82 20 40 # add r2, 0x00000040
 
 e2 82 10 14 # add r1, r2, 14
 e5 91 00 00 # ldr r0, [r1]
