@@ -111,4 +111,5 @@ e2 81 20 40 # add r2, 0x00000040
 e2 82 10 14 # add r1, r2, 14
 e5 90 01 00 # ldr r0, [r1]
 e2 10 00 20 # ands r0, r0, 0x20
-1a ff ff fa # bne -4 bytes (2 back to ldr + 2 from prefetch)
+e3 50 00 20 # cmp r0, 0x20
+1a ff ff f8 # bne -2 bytes (2 back to ldr + 2 from prefetch)
