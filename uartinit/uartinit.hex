@@ -55,7 +55,7 @@ e1 a0 02 00 # mov r0, r0 lsl 4
 e5 80 10 00 # str r0, [r1]
 
 # Initial registers done, now some bit manipulation
-e3 a0 16 f2 # mov r1, 0x3F200004 # GPFSEL1
+e3 a0 16 f2 # mov r1, 0x0F200000
 e2 81 12 03 # add r1, 0x30000000
 e2 81 10 04 # add r1, 0x00000004
 e5 90 01 00 # ldr r0, [r1]
@@ -75,25 +75,40 @@ e5 80 10 00 # str r0, [r1]
 # dummy for a while
 e3 a0 20 96 # mov r2, 0x96
 e2 52 20 01 # sub r2, r2, 1
-4a ff ff f7 # bmi -1 byte (branch if n set)
+4a ff ff fd # bmi -1 byte (branch -3, must include 8 byte prefetch)
 
 # put 3 << 14 into GPPUDCLK0 0x3F200098
-# add r1, r1, 0x4
-# mov r0, 3 << 14
-# str r0, [r1]
+e2 81 10 04 # add r1, r1, 0x4
+e3 a0 09 03 # mov r0, 3 << 14
+e5 80 10 00 # str r0, [r1]
 
 # dummy again
-# mov r2, 150
-# sub r1, 1
-# bmi -1 byte
+e3 a0 20 96 # mov r2, 0x96
+e2 52 20 01 # sub r2, r2, 1
+4a ff ff fd # bmi -1 byte (branch -3, must include 8 byte prefetch)
 
 # put 0 into GPPUDCLK0
-# mov r0, 0
-# str r0, [r1]
+e3 a0 00 00 # mov r0, 0
+e5 80 10 00 # str r0, [r1]
 
 # put 3 into AUX_MU_CNTL_REG 0x3F215060
-# mov r0, 3
-# mov r1, 0x3F215004
-# str r0, [r1]
+e3 a0 00 03 # mov r0, 3
+e3 a0 16 f2 # mov r1, 0x0f200000
+e2 81 12 03 # add r1, 0x30000000
+e2 81 1A 15 # add r1, 0x00015000
+e2 81 10 04 # add r1, 0x00000004
+e5 80 10 00 # str r0, [r1]
 
-# send over uart now
+# send over uart
+# load r2 with AUX_MU_IO_REG             (0x3F215040)
+# load r1 with r2 + 0x14 (AUX_MU_LSR_REG (0x3F215054))
+# if AUX_MU_LSR_REG & 0x20, write val to AUX_MU_IO_REG else check again
+e3 a0 26 f2 # mov r2, 0x0F200000
+e2 81 22 03 # add r2, 0x30000000
+e2 81 2a 15 # add r2, 0x00015000
+e2 81 20 40 # add r2, 0x00000040
+
+e2 82 10 14 # add r1, r2, 14
+e5 90 01 00 # ldr r0, [r1]
+e2 90 00 20 # ands r0, r0, 0x20
+1a ff ff fb # bne -5 bytes (2 back to ldr + 2 from prefetch)
