@@ -1,4 +1,5 @@
-# First turn off all LEDs so we know we loaded successfully
+### Turn off LEDs
+
 e3 a0 06 f2 # mov r0, 0x0f200000
 e2 80 02 03 # add r0, 0x30000000
 e2 80 00 10 # add r0, 0x00000010
@@ -95,10 +96,10 @@ e2 81 12 03 # add r1, 0x30000000
 e2 81 10 04 # add r1, 0x00000004
 e5 91 00 00 # ldr r0, [r1]
 
-e3 d0 0d 07 # bic r0, 7 rrot 14
-e3 a0 0d 02 # orr r0, 2 rrot 14
-e3 d0 06 0e # bic r0, e rrot 12
-e3 a0 06 04 # orr r0, 4 rrot 12
+e3 d0 0a 07 # bic r0, 7 rrot 14
+e3 80 0a 02 # orr r0, 2 rrot 14
+e3 d0 09 0e # bic r0, e rrot 12
+e3 80 09 04 # orr r0, 4 rrot 12
 
 e5 81 00 00 # str r0, [r1]
 
