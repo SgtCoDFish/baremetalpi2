@@ -96,9 +96,9 @@ e2 81 12 03 # add r1, 0x30000000
 e2 81 10 04 # add r1, 0x00000004
 e5 91 00 00 # ldr r0, [r1]
 
-e3 d0 0a 07 # bic r0, 7 rrot 14
+e3 c0 0a 07 # bic r0, 7 rrot 14
 e3 80 0a 02 # orr r0, 2 rrot 14
-e3 d0 09 0e # bic r0, e rrot 12
+e3 c0 09 0e # bic r0, e rrot 12
 e3 80 09 04 # orr r0, 4 rrot 12
 
 e5 81 00 00 # str r0, [r1]
@@ -132,7 +132,7 @@ e3 a0 00 03 # mov r0, 3
 e3 a0 16 f2 # mov r1, 0x0f200000
 e2 81 12 03 # add r1, 0x30000000
 e2 81 1A 15 # add r1, 0x00015000
-e2 81 10 04 # add r1, 0x00000004
+e2 81 10 60 # add r1, 0x00000060
 e5 81 00 00 # str r0, [r1]
 
 # send over uart
@@ -145,10 +145,33 @@ e2 82 2a 15 # add r2, 0x00015000
 e2 82 20 40 # add r2, 0x00000040
 
 e2 82 10 14 # add r1, r2, 14
+
+# print "hello, world\r\n" - 0xD chars
+e3 a0 30 0c # mov r3, c
+            # start at offet from the ldr instruction below to the first letter
+
 e5 91 00 00 # ldr r0, [r1]
 e2 00 00 20 # and r0, r0, 0x20
 e3 50 00 20 # cmp r0, 0x20
 1a ff ff fb # bne -5 bytes (3 back to ldr + 2 from prefetch)
 
-e3 a0 00 71 # mov r0, 0x71
+e7 9f 00 03 # ldr r0, [pc + r3]
 e5 82 00 00 # str r0, [r2]
+
+e2 83 30 04 # add r3, r3, 4
+e3 53 00 40 # cmp r3, 40 # 0xc base value + 0xd letters in string * 4 bytes = 34
+1a ff ff f6 # bne -20 bytes
+
+00 00 00 68 # letter 'h'
+00 00 00 65 # letter 'e'
+00 00 00 6c # letter 'l'
+00 00 00 6c # letter 'l'
+00 00 00 6f # letter 'o'
+00 00 00 20 # letter ' '
+00 00 00 77 # letter 'w'
+00 00 00 6f # letter 'o'
+00 00 00 72 # letter 'r'
+00 00 00 6c # letter 'l'
+00 00 00 64 # letter 'd'
+00 00 00 0d # letter '\r'
+00 00 00 0a # letter '\n'
