@@ -50,32 +50,32 @@ e5 80 10 00 # str r0, [r1]
 
 # AUX_MU_BAUD_REG
 e2 81 10 20 # add r1, 0x20
-e3 a0 00 27 #  mov r0, 270 = mov r0, 27 ->  mov r0, r0 << 4
-e1 a0 02 00 # mov r0, r0, 4
+e3 a0 00 27 # mov r0, 27
+e1 a0 02 00 # mov r0, r0 lsl 4
 e5 80 10 00 # str r0, [r1]
 
 # Initial registers done, now some bit manipulation
 e3 a0 16 f2 # mov r1, 0x3F200004 # GPFSEL1
 e2 81 12 03 # add r1, 0x30000000
 e2 81 10 04 # add r1, 0x00000004
-# ldr r0, [r1]
+e5 90 01 00 # ldr r0, [r1]
 
-# r0 &= ~(7 << 15)
-# r0 |= (2 << 12)
-# r0 &= ~(7 << 15)
-# r0 |= (1 << 16)
+e3 d0 0a 07 # bic r0, 7 rrot 20
+e3 a0 0a 02 # orr r0, 2 rrot 20
+e3 d0 09 0e # bic r0, e rrot 18
+e3 a0 09 02 # orr r0, 2 rrot 18
 
-# str r0, [r1]
+e5 80 10 00 # str r0, [r1]
 
 # Put a 0 into GPPUD, 0x3F200094
-# add r1, r1, 0x90
-# mov r0, 0
-# str r0, [r1]
+e2 81 10 90 # add r1, r1, 0x90
+e3 a0 00 00 # mov r0, 0
+e5 80 10 00 # str r0, [r1]
 
 # dummy for a while
-# mov r2, 150
-# sub r2, 1
-# bmi -1 byte (branch if n set = negative)
+e3 a0 02 96 # mov r2, 0x96
+e2 52 20 01 # sub r2, r2, 1
+4a ff ff f7 # bmi -1 byte (branch if n set)
 
 # put 3 << 14 into GPPUDCLK0 0x3F200098
 # add r1, r1, 0x4
