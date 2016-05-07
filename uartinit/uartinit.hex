@@ -73,7 +73,7 @@ e3 a0 00 00 # mov r0, 0
 e5 80 10 00 # str r0, [r1]
 
 # dummy for a while
-e3 a0 02 96 # mov r2, 0x96
+e3 a0 20 96 # mov r2, 0x96
 e2 52 20 01 # sub r2, r2, 1
 4a ff ff f7 # bmi -1 byte (branch if n set)
 
