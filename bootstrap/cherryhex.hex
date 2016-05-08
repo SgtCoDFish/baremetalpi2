@@ -1,0 +1,182 @@
+# Convert big-endian formatted .hex files into binary files, ignoring comments
+# which start with '#' (ASCII 0x23) and run until end of line '\n' (ASCII 0xA)
+# Ignore whitespace
+
+# Set up UART
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 18 21 # add r1, r1, 0x00210000
+e2 81 1A 05 # add r1, r1, 0x00005000
+e2 81 10 04 # add r1, r1, 0x00000004
+e3 a0 00 01 # mov r0, 1
+e5 81 00 00 # str r0, [r1]
+e2 81 10 40 # add r1, 0x40
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+e2 81 10 1c # add r1, 0x1c
+e5 81 00 00 # str r0, [r1]
+e2 41 10 14 # sub r1, 0x14
+e3 a0 00 03 # mov r0, 3
+e5 81 00 00 # str r0, [r1]
+e2 81 10 04 # add r1, 0x4
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+e2 41 10 0C # sub r1, C
+e5 81 00 00 # str r0, [r1]
+e2 81 10 04 # add r1, 4
+e3 a0 00 c6 # mov r0, c6
+e5 81 00 00 # str r0, [r1]
+e2 81 10 20 # add r1, 0x20
+e3 a0 00 0e # mov r0, e
+e2 80 0C 01 # add r0, r0, 1 rrot 24
+e5 81 00 00 # str r0, [r1]
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 16 02 # add r1, r1, 0x00200000
+e2 81 10 04 # add r1, r1, 0x00000004
+e5 91 00 00 # ldr r0, [r1]
+e3 c0 0a 07 # bic r0, 7 rrot 14
+e3 80 0a 02 # orr r0, 2 rrot 14
+e3 c0 09 0e # bic r0, e rrot 12
+e3 80 09 04 # orr r0, 4 rrot 12
+e5 81 00 00 # str r0, [r1]
+e2 81 10 90 # add r1, r1, 0x90
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+e3 a0 20 96 # mov r2, 0x96
+e2 52 20 01 # sub r2, r2, 1
+4a ff ff fd # bmi -1 byte (branch -3, must include 8 byte prefetch)
+e2 81 10 04 # add r1, r1, 0x4
+e3 a0 09 03 # mov r0, 3 << 14
+e5 81 00 00 # str r0, [r1]
+e3 a0 20 96 # mov r2, 0x96
+e2 52 20 01 # sub r2, r2, 1
+4a ff ff fd # bmi -1 byte (branch -3, must include 8 byte prefetch)
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+e3 a0 00 03 # mov r0, 3
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 18 21 # add r1, r1, 0x00210000
+e2 81 1A 05 # add r1, r1, 0x00005000
+e2 81 10 60 # add r1, r1, 0x00000060
+e5 81 00 00 # str r0, [r1]
+
+# UART setup complete
+
+# Register usage description:
+# r0 = Temp values + argument passed to subroutines
+# r2 = Temp byte, held until written to memory
+# r4 = Flags, see below
+# r5 = For calculating little-endian pos to save at, 0 < r5 < 4
+# r6 = memory save address (starts == r7)
+# r7 = initial memory save address (starts at 0x10000)
+# r8 = AUX_MU_LSR_REG address
+# r9 = AUX_MU_IO_REG  address
+
+# r4 flags register:
+#	Bit 0 = In "Comment mode"?
+#	Bit 1 = set if loading lower nibble of byte (i.e. don't shift)
+
+# load r9 with AUX_MU_IO_REG             (0x3F215040)
+# load r8 with r9 + 0x14 (AUX_MU_LSR_REG (0x3F215054))
+e3 a0 94 3f # mov r9,      0x3f000000
+e2 89 98 21 # add r9, r9, 0x00210000
+e2 89 9A 05 # add r9, r9, 0x00005000
+e2 89 90 40 # add r9, r9, 0x00000040
+e2 89 80 14 # add r8,  r9, 0x14
+
+e3 a0 76 01 # mov r7, 0x00010000
+e1 a0 60 07 # mov r6, r7
+e3 a0 50 03 # mov r5, 0x3
+
+# wait for 0x2 to start
+e5 98 00 00 # ldr r0, [r8]
+e3 10 00 01 # tst r0, 0x01
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+
+# input detected, load into r0 and check for 2
+e5 99 00 00 # ldr r0, [r9]
+e3 50 00 02 # cmp r0, 0x2
+1a ff ff f9 # beq -5
+
+# Now wait for input, then send it back and loop
+
+# read from uart
+# uart has input when AUX_MU_LSR_REG & 0x01
+e5 98 00 00 # ldr r0, [r8]
+e3 10 00 01 # tst r0, 0x01
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+
+# input detected, load into r0
+e5 99 00 00 # ldr r0, [r9]
+
+e3 50 00 23 # cmp r0, '#' 0x23
+03 84 40 01 # orreq r4, r4, 0x1
+
+e3 14 00 01 # tst r4, 0x01
+0a 00 00 02 # beq over "comment mode"
+	# "comment mode" - check for end of line, else go back for more input
+	e3 50 00 0a # cmp r0, '\n' (0xa)
+	# if '\n' end comment mode
+	03 c4 40 01 # biceq r4, 0x1
+	# whether we ended comment mode or not, get more input
+	ea ff ff f4 # b -10 bytes
+
+# not in "comment mode" so read value; ignore below 0x30 ('0')
+# check for 0x3 which means goto address in r7 and start executing
+e3 50 00 03 # cmp r0, 0x03
+01 a0 f0 07 # mov pc, r7
+
+e3 50 00 30 # cmp r0, '0' (0x30)
+ba ff ff f0 # blt "read from input"
+
+# at this point, must be >= 30.
+# if r0 > 0x39 ('9'):
+	# assume hex letter (lowercase)
+	# subtract 0x57 to convert from lowercase ascii -> hex value
+# else:
+	# assume digit (0-9)
+	# subtract 0x30 to convert digit -> hex value
+e3 50 00 39 # cmp r0, 0x39 ('9')
+ca 00 00 01 # bgt forward to letter conversion code
+	# convert digit
+	e2 40 00 30 # sub r0, r0, 0x30
+	ea 00 00 00 # b to value processing
+
+# assume letter
+e2 40 00 57 # sub r0, r0, 0x57
+
+# send the character back over uart for immediate feedback
+# wait until we can send
+e5 98 10 00 # ldr r1, [r8]
+e3 11 00 20 # tst r1, 0x20
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+
+e5 89 00 00 # str r0, [r9]
+
+# now write into memory
+# if bit 1 of r4 is set:
+	# add r0 to r2
+	# store r2 into memory at r6 + r5
+	# if r5 == 0:
+		# r5 = 0, r6 += 4
+	# else:
+		# r5 -= 1
+# else:
+	# r2 = r0 << 4
+	# go to next input
+
+e3 14 00 02 # tst r4, 0x2
+0a 00 00 06 # beq simple case
+
+# handle more complicated case
+e0 82 20 03 # add r2, r0, r2
+e7 c6 20 05 # str r2, [r6+r5]
+12 45 50 01 # sub r5, r5, 0x1
+5a 00 00 03 # bpl to load again
+e3 a0 50 03 # mov r5, 0x3
+e2 86 60 04 # add r6, r6, 0x4
+ea 00 00 00 # branch to load again
+
+# simple case
+e1 a0 22 00 # lsl r2, r0, 0x4
+
+ea ff ff dc # branch 22 instructions to beginning of read routine + 2 prefetch
