@@ -1,7 +1,7 @@
 # load 3f200010 into r0 using immediate addressing
-e3 a0 06 f2 # mov r0, 0x0f200000
-e2 80 02 03 # add r0, 0x30000000
-e2 80 00 10 # add r0, 0x00000010
+e3 a0 04 3f # mov r0,     0x3f000000
+e2 80 06 02 # add r0, r0, 0x00200000
+e2 80 00 10 # add r0, r0, 0x00000010
 
 # load the value at the address in r0 into r1
 e5 90 10 00 # ldr r1, [r0]
@@ -30,5 +30,7 @@ e3 a0 20 80 # mov r2, 0x80
 e1 a0 14 02 # mov r1, (r2 << 8)
 e5 90 10 00 # ldr r1, [r0]
 
-e3 a0 10 08 # mov r1, 0x00000008
+e3 a0 10 08 # mov r1, 0x8
 e5 90 10 00 # ldr r1, [r0]
+
+ea ff ff fe # b 0x00, loop forever

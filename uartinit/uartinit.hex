@@ -1,38 +1,4 @@
-### Turn off LEDs
-
-e3 a0 06 f2 # mov r0, 0x0f200000
-e2 80 02 03 # add r0, 0x30000000
-e2 80 00 10 # add r0, 0x00000010
-
-# load the value at the address in r0 into r1
-e5 90 10 00 # ldr r1, [r0]
-
-e3 c1 16 0e # bic r1, 0x00E00000
-e3 81 16 02 # orr r1, 0x00200000
-
-# store the value in r1 into the address in r0
-e5 80 10 00 # str r1, [r0]
-
-# subtract 4 from r0 to leave 0x3f20000c
-e2 40 00 04 # sub r0, 0x00000004
-
-# load again then modify and save
-e5 90 10 00 # ldr r1, [r0]
-e3 a0 20 07 # mov r2, 0x07
-e1 c1 17 82 # bic r1, (r2 << 15)
-e3 81 19 02 # orr r1, 0x00008000
-e5 80 10 00 # str r1, [r0]
-
-# set r0 to 0x3F20002C by adding 20
-e2 80 00 20 # add r0, 0x00000020
-e3 a0 20 80 # mov r2, 0x80
-e1 a0 14 02 # mov r1, (r2 << 8)
-e5 90 10 00 # ldr r1, [r0]
-
-e3 a0 10 08 # mov r1, 0x00000008
-e5 90 10 00 # ldr r1, [r0]
-
-# Now set up UART
+# Set up UART
 
 # Registers for Setup
 # --------- --- -----
@@ -48,10 +14,10 @@ e5 90 10 00 # ldr r1, [r0]
 # Do setup
 # AUX_ENABLES
 # mov r1, 0x3F215004
-e3 a0 16 f2 # mov r1, 0x0f200000
-e2 81 12 03 # add r1, 0x30000000
-e2 81 1A 15 # add r1, 0x00015000
-e2 81 10 04 # add r1, 0x00000004
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 18 21 # add r1, r1, 0x00210000
+e2 81 1A 05 # add r1, r1, 0x00005000
+e2 81 10 04 # add r1, r1, 0x00000004
 
 e3 a0 00 01 # mov r0, 1
 e5 81 00 00 # str r0, [r1]
@@ -91,9 +57,10 @@ e2 80 0C 01 # add r0, r0, 1 rrot 24
 e5 81 00 00 # str r0, [r1]
 
 # Initial registers done, now some bit manipulation
-e3 a0 16 f2 # mov r1, 0x0F200000
-e2 81 12 03 # add r1, 0x30000000
-e2 81 10 04 # add r1, 0x00000004
+# using GPFSEL1 (0x3f200004)
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 16 02 # add r1, r1, 0x00200000
+e2 81 10 04 # add r1, r1, 0x00000004
 e5 91 00 00 # ldr r0, [r1]
 
 e3 c0 0a 07 # bic r0, 7 rrot 14
@@ -129,25 +96,27 @@ e5 81 00 00 # str r0, [r1]
 
 # put 3 into AUX_MU_CNTL_REG 0x3F215060
 e3 a0 00 03 # mov r0, 3
-e3 a0 16 f2 # mov r1, 0x0f200000
-e2 81 12 03 # add r1, 0x30000000
-e2 81 1A 15 # add r1, 0x00015000
-e2 81 10 60 # add r1, 0x00000060
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 18 21 # add r1, r1, 0x00210000
+e2 81 1A 05 # add r1, r1, 0x00005000
+e2 81 10 60 # add r1, r1, 0x00000060
 e5 81 00 00 # str r0, [r1]
+
+# Setup complete
 
 # send over uart
 # load r2 with AUX_MU_IO_REG             (0x3F215040)
 # load r1 with r2 + 0x14 (AUX_MU_LSR_REG (0x3F215054))
 # if AUX_MU_LSR_REG & 0x20, write val to AUX_MU_IO_REG else check again
-e3 a0 26 f2 # mov r2, 0x0F200000
-e2 82 22 03 # add r2, 0x30000000
-e2 82 2a 15 # add r2, 0x00015000
-e2 82 20 40 # add r2, 0x00000040
+e3 a0 24 3f # mov r2,     0x3f000000
+e2 82 28 21 # add r2, r2, 0x00210000
+e2 82 2A 05 # add r2, r2, 0x00005000
+e2 82 20 40 # add r2, r2, 0x00000040
 
 e2 82 10 14 # add r1, r2, 14
 
 # print "hello, world\r\n" - 0xD chars
-e3 a0 30 0c # mov r3, c
+e3 a0 30 10 # mov r3, 10
             # start at offet from the ldr instruction below to the first letter
 
 e5 91 00 00 # ldr r0, [r1]
@@ -158,19 +127,21 @@ e7 9f 00 03 # ldr r0, [pc + r3]
 e5 82 00 00 # str r0, [r2]
 
 e2 83 30 04 # add r3, r3, 4
-e3 53 00 40 # cmp r3, 40 # 0xc base value + 0xd letters in string * 4 bytes = 34
+e3 53 00 44 # cmp r3, 44 # 0x10 base value + 0xd letters in string * 4 bytes = 34
 1a ff ff f7 # branch back if not equal
 
-00 00 00 68 # letter 'h'
-00 00 00 65 # letter 'e'
-00 00 00 6c # letter 'l'
-00 00 00 6c # letter 'l'
-00 00 00 6f # letter 'o'
-00 00 00 20 # letter ' '
-00 00 00 77 # letter 'w'
-00 00 00 6f # letter 'o'
-00 00 00 72 # letter 'r'
-00 00 00 6c # letter 'l'
-00 00 00 64 # letter 'd'
-00 00 00 0d # letter '\r'
-00 00 00 0a # letter '\n'
+ea ff ff fe # b 0x00, loop forever
+
+00 00 00 68 # 'h'
+00 00 00 65 # 'e'
+00 00 00 6c # 'l'
+00 00 00 6c # 'l'
+00 00 00 6f # 'o'
+00 00 00 20 # ' '
+00 00 00 77 # 'w'
+00 00 00 6f # 'o'
+00 00 00 72 # 'r'
+00 00 00 6c # 'l'
+00 00 00 64 # 'd'
+00 00 00 0d # '\r'
+00 00 00 0a # '\n'
