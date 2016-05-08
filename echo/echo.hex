@@ -1,0 +1,124 @@
+# Set up UART
+# AUX_ENABLES
+# mov r1, 0x3F215004
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 18 21 # add r1, r1, 0x00210000
+e2 81 1A 05 # add r1, r1, 0x00005000
+e2 81 10 04 # add r1, r1, 0x00000004
+
+e3 a0 00 01 # mov r0, 1
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_IER_REG
+e2 81 10 40 # add r1, 0x40
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_CNTL_REG
+e2 81 10 1c # add r1, 0x1c
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_LCR_REG
+e2 41 10 14 # sub r1, 0x14
+e3 a0 00 03 # mov r0, 3
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_MCR_REG
+e2 81 10 04 # add r1, 0x4
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_IER_REG
+e2 41 10 0C # sub r1, C
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_IIR_REG
+e2 81 10 04 # add r1, 4
+e3 a0 00 c6 # mov r0, c6
+e5 81 00 00 # str r0, [r1]
+
+# AUX_MU_BAUD_REG gets value 270 (0x10E)
+e2 81 10 20 # add r1, 0x20
+e3 a0 00 0e # mov r0, e
+e2 80 0C 01 # add r0, r0, 1 rrot 24
+e5 81 00 00 # str r0, [r1]
+
+# Initial registers done, now some bit manipulation
+# using GPFSEL1 (0x3f200004)
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 16 02 # add r1, r1, 0x00200000
+e2 81 10 04 # add r1, r1, 0x00000004
+e5 91 00 00 # ldr r0, [r1]
+
+e3 c0 0a 07 # bic r0, 7 rrot 14
+e3 80 0a 02 # orr r0, 2 rrot 14
+e3 c0 09 0e # bic r0, e rrot 12
+e3 80 09 04 # orr r0, 4 rrot 12
+
+e5 81 00 00 # str r0, [r1]
+
+# Put a 0 into GPPUD, 0x3F200094
+e2 81 10 90 # add r1, r1, 0x90
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+
+# dummy for a while
+e3 a0 20 96 # mov r2, 0x96
+e2 52 20 01 # sub r2, r2, 1
+4a ff ff fd # bmi -1 byte (branch -3, must include 8 byte prefetch)
+
+# put 3 << 14 into GPPUDCLK0 0x3F200098
+e2 81 10 04 # add r1, r1, 0x4
+e3 a0 09 03 # mov r0, 3 << 14
+e5 81 00 00 # str r0, [r1]
+
+# dummy again
+e3 a0 20 96 # mov r2, 0x96
+e2 52 20 01 # sub r2, r2, 1
+4a ff ff fd # bmi -1 byte (branch -3, must include 8 byte prefetch)
+
+# put 0 into GPPUDCLK0
+e3 a0 00 00 # mov r0, 0
+e5 81 00 00 # str r0, [r1]
+
+# put 3 into AUX_MU_CNTL_REG 0x3F215060
+e3 a0 00 03 # mov r0, 3
+e3 a0 14 3f # mov r1,     0x3f000000
+e2 81 18 21 # add r1, r1, 0x00210000
+e2 81 1A 05 # add r1, r1, 0x00005000
+e2 81 10 60 # add r1, r1, 0x00000060
+e5 81 00 00 # str r0, [r1]
+
+# Setup complete
+
+# Initialise registers for input/output
+# load r2 with AUX_MU_IO_REG             (0x3F215040)
+# load r1 with r2 + 0x14 (AUX_MU_LSR_REG (0x3F215054))
+# if AUX_MU_LSR_REG & 0x20, write val to AUX_MU_IO_REG else check again
+e3 a0 24 3f # mov r2,     0x3f000000
+e2 82 28 21 # add r2, r2, 0x00210000
+e2 82 2A 05 # add r2, r2, 0x00005000
+e2 82 20 40 # add r2, r2, 0x00000040
+
+e2 82 10 14 # add r1, r2, 14
+
+# Now wait for input, then send it back and loop
+
+# read from uart
+# uart has input when AUX_MU_LSR_REG & 0x01
+e5 91 00 00 # ldr r0, [r1]
+e3 10 00 01 # tst r0, 0x01
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+
+# input detected, load into r3
+e5 92 30 00 # ldr r3, [r2]
+
+# send back over uart
+# wait until we can send
+e5 91 00 00 # ldr r0, [r1]
+e3 10 00 20 # tst r0, 0x20
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+
+e5 82 30 00 # str r3, [r2]
+
+ea ff ff f6 # b - 32 bytes to beginning of read routine + 8 prefetch
