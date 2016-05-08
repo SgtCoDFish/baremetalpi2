@@ -151,16 +151,15 @@ e3 a0 30 0c # mov r3, c
             # start at offet from the ldr instruction below to the first letter
 
 e5 91 00 00 # ldr r0, [r1]
-e2 00 00 20 # and r0, r0, 0x20
-e3 50 00 20 # cmp r0, 0x20
-1a ff ff fb # bne -5 bytes (3 back to ldr + 2 from prefetch)
+e3 10 00 20 # tst r0, 0x20
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
 
 e7 9f 00 03 # ldr r0, [pc + r3]
 e5 82 00 00 # str r0, [r2]
 
 e2 83 30 04 # add r3, r3, 4
 e3 53 00 40 # cmp r3, 40 # 0xc base value + 0xd letters in string * 4 bytes = 34
-1a ff ff f6 # bne -20 bytes
+1a ff ff f7 # branch back if not equal
 
 00 00 00 68 # letter 'h'
 00 00 00 65 # letter 'e'
