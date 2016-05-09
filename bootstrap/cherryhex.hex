@@ -123,7 +123,7 @@ e3 14 00 01 # tst r4, 0x01
 # not in "comment mode" so read value; ignore below 0x30 ('0')
 # check for 0x3 which means goto address in r7 and start executing
 e3 50 00 03 # cmp r0, 0x03
-01 a0 f0 07 # mov pc, r7
+>> TODO << # bx r7
 
 e3 50 00 30 # cmp r0, '0' (0x30)
 ba ff ff f0 # blt "read from input"
@@ -161,7 +161,7 @@ e5 c6 20 00 # strb r2, [r6]
 e2 86 60 01 # add r6, r6, 0x1
 e3 c4 40 02 # bic r4, r4, 0x2
 
-# send the character back over uart for immediate feedback
+# send the byte back over uart for immediate feedback
 # wait until we can send
 e5 98 10 00 # ldr r1, [r8]
 e3 11 00 20 # tst r1, 0x20
