@@ -63,9 +63,9 @@ e5 81 00 00 # str r0, [r1]
 
 # Register usage description:
 # r0 = Temp values + argument passed to subroutines
-# r2 = Temp byte, held until written to memory
+# r2 = Temp word, held until written to memory
 # r4 = Flags, see below
-# r5 = For calculating little-endian pos to save at, 0 < r5 < 4
+# r5 = For calculating shift offset for building a byte
 # r6 = memory save address (starts == r7)
 # r7 = initial memory save address (starts at 0x10000)
 # r8 = AUX_MU_LSR_REG address
@@ -81,11 +81,12 @@ e3 a0 94 3f # mov r9,      0x3f000000
 e2 89 98 21 # add r9, r9, 0x00210000
 e2 89 9A 05 # add r9, r9, 0x00005000
 e2 89 90 40 # add r9, r9, 0x00000040
-e2 89 80 14 # add r8,  r9, 0x14
+e2 89 80 14 # add r8, r9, 0x14
 
 e3 a0 76 01 # mov r7, 0x00010000
 e1 a0 60 07 # mov r6, r7
-e3 a0 50 03 # mov r5, 0x3
+e3 a0 50 1c # mov r5, 0x1c = 28
+e3 a0 20 00 # mov r2, 0x00
 
 # wait for 0x2 to start
 e5 98 00 00 # ldr r0, [r8]
@@ -123,7 +124,7 @@ e3 14 00 01 # tst r4, 0x01
 # not in "comment mode" so read value; ignore below 0x30 ('0')
 # check for 0x3 which means goto address in r7 and start executing
 e3 50 00 03 # cmp r0, 0x03
->> TODO << # bx r7
+01 a0 f0 07 # mov pc, r7
 
 e3 50 00 30 # cmp r0, '0' (0x30)
 ba ff ff f0 # blt "read from input"
@@ -144,35 +145,24 @@ ca 00 00 01 # bgt forward to letter conversion code
 # assume letter
 e2 40 00 57 # sub r0, r0, 0x57
 
-# now write into memory
-# if bit 1 of r4 is set:
-	# add r0 to r2
-	# store r2 into memory at r6
-# else:
-	# r2 = r0 << 4
-	# go to next input
-
-e3 14 00 02 # tst r4, 0x2
-0a 00 00 09 # beq simple case
-
-# handle more complicated case
-e0 82 20 00 # add r2, r0, r2
-e5 c6 20 00 # strb r2, [r6]
-e2 86 60 01 # add r6, r6, 0x1
-e3 c4 40 02 # bic r4, r4, 0x2
-
-# send the byte back over uart for immediate feedback
+# send the character back over uart for immediate feedback
 # wait until we can send
 e5 98 10 00 # ldr r1, [r8]
 e3 11 00 20 # tst r1, 0x20
 0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+
+# now write into register r2 , shifting by r5
+e1 a0 05 10 # lsl r0, r0, r5
+e1 82 20 00 # orr r2, r2, r0
+
+e3 55 00 00 # cmp r5, 0x00
+1a 00 00 05 # bne forwards 4 + 2
+e3 a0 50 1c # mov r5, 0x1c = 28 
+e5 86 20 00 # str r2, [r6]
 e5 89 20 00 # str r2, [r9]
-e3 a0 20 00 # mov r2, 0
-
-ea 00 00 01 # branch to load again
-
-# simple case
-e1 a0 22 00 # lsl r2, r0, 0x4
-e3 84 40 02 # bic r4, r4, 0x2
+e3 a0 20 00 # mov r2, 0x00
+e2 86 60 04 # add r6, r6, 0x4
+ea 00 00 00 # skip 1 instr
+e2 45 50 04 # sub r5, r5, 0x4
 
 ea ff ff dc # branch 22 instructions to beginning of read routine + 2 prefetch
