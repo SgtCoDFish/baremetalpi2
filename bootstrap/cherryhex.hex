@@ -122,12 +122,12 @@ e3 50 00 23 # cmp r0, '#' 0x23
 
 e3 14 00 01 # tst r4, 0x01
 0a 00 00 02 # beq over "comment mode"
-	# "comment mode" - check for end of line, else go back for more input
-	e3 50 00 0a # cmp r0, '\n' (0xa)
-	# if '\n' end comment mode
-	03 c4 40 01 # biceq r4, 0x1
-	# whether we ended comment mode or not, get more input
-	ea ff ff f1 # b -10 bytes
+# "comment mode" - check for end of line, else go back for more input
+e3 50 00 0a # cmp r0, '\n' (0xa)
+# if '\n' end comment mode
+03 c4 40 01 # biceq r4, 0x1
+# whether we ended comment mode or not, get more input
+ea ff ff f1 # b -10 bytes
 
 # not in "comment mode" so read value; ignore below 0x30 ('0')
 
@@ -136,16 +136,16 @@ ba ff ff f0 # blt "read from input"
 
 # at this point, must be >= 30.
 # if r0 > 0x39 ('9'):
-	# assume hex letter (lowercase)
-	# subtract 0x57 to convert from lowercase ascii -> hex value
+# assume hex letter (lowercase)
+# subtract 0x57 to convert from lowercase ascii -> hex value
 # else:
-	# assume digit (0-9)
-	# subtract 0x30 to convert digit -> hex value
+# assume digit (0-9)
+# subtract 0x30 to convert digit -> hex value
 e3 50 00 39 # cmp r0, 0x39 ('9')
 ca 00 00 01 # bgt forward to letter conversion code
-	# convert digit
-	e2 40 00 30 # sub r0, r0, 0x30
-	ea 00 00 00 # b to value processing
+# convert digit
+e2 40 00 30 # sub r0, r0, 0x30
+ea 00 00 00 # b to value processing
 
 # assume letter
 e2 40 00 57 # sub r0, r0, 0x57
