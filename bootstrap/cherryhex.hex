@@ -2,6 +2,12 @@
 # which start with '#' (ASCII 0x23) and run until end of line '\n' (ASCII 0xA)
 # Ignore whitespace
 
+# Turn off caching
+#ee 11 2f 10 # mrc p15, 0, 42, c1, c0, 0 # load c0 from c1 into r2
+#e3 c2 2a 01 # bic r2, r2, 0x1000
+#e3 c2 20 04 # bic r2, r2, 0x4
+#ee 01 2f 10 # mcr p15, 0, r2, c1, c0, 0 # load r2 into c0 in c1
+
 # Set up UART
 e3 a0 14 3f # mov r1,     0x3f000000
 e2 81 18 21 # add r1, r1, 0x00210000
@@ -67,7 +73,7 @@ e5 81 00 00 # str r0, [r1]
 # r4 = Flags, see below
 # r5 = For calculating shift offset for building a byte
 # r6 = memory save address (starts == r7)
-# r7 = initial memory save address (starts at 0x8000)
+# r7 = initial memory save address
 # r8 = AUX_MU_LSR_REG address
 # r9 = AUX_MU_IO_REG  address
 
@@ -80,12 +86,12 @@ e3 a0 10 00 # mov r1, 0x00
 e3 a0 20 00 # mov r2, 0x00
 e3 a0 40 00 # mov r4, 0x00
 e3 a0 50 1c # mov r5, 0x1c = 28
-e3 a0 7a 08 # mov r7, 0x0008000
+e3 a0 7a 04 # mov r7, 0x0004000
 e1 a0 60 07 # mov r6, r7
 
-# load r9 with AUX_MU_IO_REG             (0x3F215040)
+# load r9 with            AUX_MU_IO_REG  (0x3F215040)
 # load r8 with r9 + 0x14 (AUX_MU_LSR_REG (0x3F215054))
-e3 a0 94 3f # mov r9,      0x3f000000
+e3 a0 94 3f # mov r9,     0x3f000000
 e2 89 98 21 # add r9, r9, 0x00210000
 e2 89 9A 05 # add r9, r9, 0x00005000
 e2 89 90 40 # add r9, r9, 0x00000040
@@ -114,8 +120,7 @@ e5 99 00 00 # ldr r0, [r9]
 
 # check for 0x3 which means goto address in r7 and start executing
 e3 50 00 03 # cmp r0, 0x03
-03 a0 e0 dc # moveq r14, 0xdc (back to init code for the bootloader block)
-01 2f ff 17 # bxeq r7
+0a 00 00 1c # branch forward to end of this file for branch setup
 
 e3 50 00 23 # cmp r0, '#' 0x23
 03 84 40 01 # orreq r4, r4, 0x1
@@ -127,7 +132,7 @@ e3 50 00 0a # cmp r0, '\n' (0xa)
 # if '\n' end comment mode
 03 c4 40 01 # biceq r4, 0x1
 # whether we ended comment mode or not, get more input
-ea ff ff f1 # b -10 bytes
+ea ff ff f2 # b -10 bytes
 
 # not in "comment mode" so read value; ignore below 0x30 ('0')
 
@@ -150,24 +155,50 @@ ea 00 00 00 # b to value processing
 # assume letter
 e2 40 00 57 # sub r0, r0, 0x57
 
-# send the character back over uart for immediate feedback
-# wait until we can send
-e5 98 10 00 # ldr r1, [r8]
-e3 11 00 20 # tst r1, 0x20
-0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
-
 # now write into register r2 , shifting by r5
 e1 a0 05 10 # lsl r0, r0, r5
 e1 82 20 00 # orr r2, r2, r0
 
 e3 55 00 00 # cmp r5, 0x00
-1a 00 00 05 # bne forwards 4 + 2
+1a 00 00 08 # bne forwards 4 + 2
 e3 a0 50 1c # mov r5, 0x1c = 28 
 e5 86 20 00 # str r2, [r6]
+# send the character back over uart for immediate feedback
+# wait until we can send
+e5 98 10 00 # ldr r1, [r8]
+e3 11 00 20 # tst r1, 0x20
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
 e5 89 20 00 # str r2, [r9]
 e3 a0 20 00 # mov r2, 0x00
 e2 86 60 04 # add r6, r6, 0x4
 ea 00 00 00 # skip 1 instr
 e2 45 50 04 # sub r5, r5, 0x4
 
-ea ff ff db # branch 22 instructions to beginning of read routine + 2 prefetch
+ea ff ff dc # branch 22 instructions to beginning of read routine + 2 prefetch
+
+# if we get here, we read 0x03 on input and we need to bx r7
+# invalidate caches first
+e3 a0 c0 dc # mov r12, 0xdc
+
+# Move to Coprocessor from Register
+# Set coprocessor p15 c7 from r12, into register c10 with value 1
+# i.e. "Data cache clean line by MVA to PoC"
+# http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0464f/BABHBIDJ.html
+#e3 a0 e0 dc # mov r14, 0xdc (back to init code for the bootloader block)
+#ee 07 cf 3a # mcr p15, 0, r12, cr7, cr10, {1}
+
+#f5 7f f0 4f # DSB - Data Synchronization Barrier
+            # All pending loads, stores, cache instructions are completed.
+
+#e3 a0 c0 00 # mov r12, 0x00
+#ee 07 cf 15 # mcr p15, 0, r12, c7, c5, 0 - Set c5 in c7 with op 0
+            # Instruction cache invalidate all
+
+#e3 a0 c0 00 # mov r12, 0x00
+#ee 07 cf d5 # mcr 15, 0, r12, c7, c5, 6 - Set c5 in c7 with op 6
+            # Branch predictor invalidate all
+
+#f5 7f f0 4f # DSB
+#f5 7f f0 6f # ISB - Instruction Sync Barrier
+
+e1 2f ff 17 # bx r7
