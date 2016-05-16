@@ -2,3 +2,6 @@ build
 build-*
 *.img
 *.bin
+*.o
+*.elf
+
