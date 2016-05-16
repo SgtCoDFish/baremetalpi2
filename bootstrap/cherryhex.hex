@@ -201,16 +201,16 @@ ea ff ff dc # branch 22 instructions to beginning of read routine + 2 prefetch
 #f5 7f f0 6f # ISB - Instruction Sync Barrier
 
 # e3 a0 c0 dc # mov r12, 0xdc
-# e1 2f ff 17 # bx r7
+e1 2f ff 17 # bx r7
 
-e1 a0 a0 06 # mov r10, r6
-e1 a0 60 07 # mov r6, r7
-e5 d6 20 00 # ldrb r2, [r6]
-e5 98 10 00 # ldr r1, [r8]
-e3 11 00 20 # tst r1, 0x20
-0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
-e5 c9 20 00 # strb r2, [r9]
-e2 86 60 01 # add r6, r6, 0x1
-e1 46 60 0a # cmp r6, r10
-1a ff ff f7 # bne to ldr instruction
+# e1 a0 a0 06 # mov r10, r6
+# e1 a0 60 07 # mov r6, r7
+# e5 d6 20 00 # ldrb r2, [r6]
+# e5 98 10 00 # ldr r1, [r8]
+# e3 11 00 20 # tst r1, 0x20
+# 0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+# e5 c9 20 00 # strb r2, [r9]
+# e2 86 60 01 # add r6, r6, 0x1
+# e1 46 60 0a # cmp r6, r10
+# 1a ff ff f7 # bne to ldr instruction
 ea ff ff fe # b 0x00, loop forever

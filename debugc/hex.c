@@ -5,6 +5,10 @@
  * ARM Cortex A7 based Raspberry Pi 2.
  */
 
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
+
 #include <stdint.h>
 
 #define PERIPHERAL_BASE 0x3F000000
@@ -28,6 +32,7 @@ static void uart_init();
 static char uart_get();
 static void uart_put(char val);
 static void uart_puts(const char *str);
+static void uart_puthex(uint32_t val);
 extern void dummy();
 void put_mem(uint32_t address, uint32_t value);
 uint32_t get_mem(uint32_t address);
@@ -51,6 +56,30 @@ static void uart_puts(const char *str) {
 	
 	for(int i = 0; i < len; ++i) {
 		uart_put(str[i]);
+	}
+}
+
+static void uart_puthex(uint32_t value) {
+	// taken from dwelch/rpi2
+	uint32_t shift;
+	uint32_t tempchar;
+
+	shift = 32;
+	while(1) {
+		shift -= 4;
+		tempchar = (value >> shift) & 0xF;
+		
+		if(tempchar>9) {
+			tempchar+=0x37;
+		} else {
+			tempchar+=0x30;
+		}
+		
+		uart_put(tempchar);
+		
+		if(shift == 0) {
+			break;
+		}
 	}
 }
 
@@ -107,19 +136,76 @@ static int strlen(const char *s) {
 	return len;
 }
 
+#define MEM_START 0x4000
+
 int kernel_main() {
 	uart_init();
-	uart_puts("hello, world\r\n");
+	uart_puts("debugc\r\n");
 
-	while(1) {
+	// wait for 0x02 to start listening for input
+	while(true) {
+		const char c = uart_get();
+		if (c == 0x02) {
+			break;
+		}
+	}
+	
+	bool comment_mode = false;
+	uint32_t temp_num = 0x00000000;
+	uint8_t num_shift = 28;
+	uint32_t mem_pos = MEM_START;
+	uint32_t vals_read = 0;
+
+	while(true) {
 		char c = uart_get();
 		
-		if(c < 0x30) {
-			continue;
-		} else if(c <= 0x39) {
-			uart_put(c);
-		} else {
-			uart_put('t');
+		if(c == 0x03) {
+			break;
 		}
+		
+		if(c == 0x23) {
+			comment_mode = true;
+		}
+		
+		if(comment_mode) {
+			if(c == 0x10) { // '\n'
+				comment_mode = false;
+			}
+			
+			continue;
+		}
+		
+		if(c < 0x30) { // ignore whitespace
+			continue;
+		}
+		
+		if(c <= 0x39) {
+			c -= 0x30;
+		} else {
+			c -= 0x57;
+		}
+		
+		temp_num += (((uint32_t)c) << num_shift);
+		
+		if(num_shift == 0) {
+			num_shift = 28;
+			uart_puthex(temp_num);
+			put_mem(mem_pos, temp_num);
+			mem_pos += sizeof(uint32_t);
+			temp_num = 0x00000000;
+			++vals_read;
+		} else {
+			num_shift -= 4;
+		}
+	}
+	
+	for(int i = 0; i < vals_read; ++i) {
+		uart_puthex(get_mem(MEM_START + (i * 4)));
+	}
+	
+	// uart_puts("\r\nDONE\r\n");
+	
+	while(true) {
+		dummy();
 	}
 }
