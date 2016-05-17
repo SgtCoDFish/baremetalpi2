@@ -1,6 +1,5 @@
 # Convert big-endian formatted .hex files into binary files, ignoring comments
 # which start with '#' (ASCII 0x23) and run until end of line '\n' (ASCII 0xA)
-# Ignore whitespace
 
 # Turn off caching
 #ee 11 2f 10 # mrc p15, 0, 42, c1, c0, 0 # load c0 from c1 into r2
@@ -9,6 +8,7 @@
 #ee 01 2f 10 # mcr p15, 0, r2, c1, c0, 0 # load r2 into c0 in c1
 
 # Set up UART
+# See UARTINIT for a commented example
 e3 a0 14 3f # mov r1,     0x3f000000
 e2 81 18 21 # add r1, r1, 0x00210000
 e2 81 1a 05 # add r1, r1, 0x00005000
@@ -71,15 +71,15 @@ e5 81 00 00 # str r0, [r1]
 # r0 = Temp values + argument passed to subroutines
 # r2 = Temp word, held until written to memory
 # r4 = Flags, see below
-# r5 = For calculating shift offset for building a byte
+# r5 = For calculating shift offset when building a byte
 # r6 = memory save address (starts == r7)
 # r7 = initial memory save address
 # r8 = AUX_MU_LSR_REG address
 # r9 = AUX_MU_IO_REG  address
 
 # r4 flags register:
-#	Bit 0 = In "Comment mode"?
-#	Bit 1 = set if loading lower nibble of byte (i.e. don't shift)
+# Bit 0 = In "Comment mode"?
+# Bit 1 = set if loading lower nibble of byte (i.e. don't shift)
 
 e3 a0 00 00 # mov r0, 0x00
 e3 a0 10 00 # mov r1, 0x00
@@ -107,10 +107,10 @@ e5 99 00 00 # ldr r0, [r9]
 e3 50 00 02 # cmp r0, 0x2
 1a ff ff f9 # beq -5
 
-# Now wait for input, then send it back and loop
+# Now wait for input, build up words and send back the last byte of each word
+# while writing that word to memory
 
-# read from uart
-# uart has input when AUX_MU_LSR_REG & 0x01
+# read from uart - uart has input when AUX_MU_LSR_REG & 0x01
 e5 98 00 00 # ldr r0, [r8]
 e3 10 00 01 # tst r0, 0x01
 0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
@@ -118,7 +118,7 @@ e3 10 00 01 # tst r0, 0x01
 # input detected, load into r0
 e5 99 00 00 # ldr r0, [r9]
 
-# check for 0x3 which means goto address in r7 and start executing
+# check for 0x3 which we take to mean "goto address in r7 and start executing"
 e3 50 00 03 # cmp r0, 0x03
 0a 00 00 1d # branch forward to end of this file for branch setup
 
@@ -152,8 +152,9 @@ ca 00 00 01 # bgt forward to letter conversion code
 e2 40 00 30 # sub r0, r0, 0x30
 ea 00 00 01 # b to value processing
 
-# assume lowercase letter
+# setting bit 5 converts uppercase to lowercase
 e3 80 00 20 # orr r0, r0, 0x20
+# assume lowercase letter
 e2 40 00 57 # sub r0, r0, 0x57
 
 # now write into register r2 , shifting by r5
@@ -202,7 +203,6 @@ ea ff ff db # branch 22 instructions to beginning of read routine + 2 prefetch
 #f5 7f f0 6f # ISB - Instruction Sync Barrier
 
 # e3 a0 c0 dc # mov r12, 0xdc
-e1 2f ff 17 # bx r7
 
 # e1 a0 a0 06 # mov r10, r6
 # e1 a0 60 07 # mov r6, r7
@@ -214,4 +214,6 @@ e1 2f ff 17 # bx r7
 # e2 86 60 01 # add r6, r6, 0x1
 # e1 46 60 0a # cmp r6, r10
 # 1a ff ff f7 # bne to ldr instruction
+
+e1 2f ff 17 # bx r7
 ea ff ff fe # b 0x00, loop forever
