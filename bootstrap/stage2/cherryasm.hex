@@ -2,7 +2,7 @@
 # starting with '#' (0x23) and run until '\n' (0xA).
 
 # Also parses labels, of the form 'xAB:' which mark their position in the file
-# and commands of the form jxAB which jump to those points in the file using a
+# and commands of the form jAB which jump to those points in the file using a
 # bl instruction.
 
 # Set up UART
@@ -77,6 +77,7 @@ e5 81 00 00 # str r0, [r1]
 # r10 = Amount of bytes loaded so far.
 # r11 = Label table beginning. Labels are stored at r11 + their name's value * 4
 #       i.e. Label 01 is at r11 + 4
+# r12 = Temp values
 
 # r4 flags register:
 # Bit 0 = In "Comment mode"?
@@ -142,12 +143,9 @@ e3 50 00 78 # cmp r0, 'x' 0x78
 e3 14 00 02 # tst r4, 0x02
 @@ @@ @@ @@ # beq over "label mode"
 # LABEL MODE - Read two hex chars and add them to the label table
-e5 98 00 00 # ldr r0, [r8]
-e3 10 00 01 # tst r0, 0x01
-0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
-e5 99 00 00 # ldr r0, [r9]
-# lsl r1, r0, 0x4
-
+@@ @@ @@ @@ # bl ReadLabel
+e7 8b a0 01 # str r10, [r11 + r1]
+@@ @@ @@ @@ # b back to read procedure
 
 e3 50 00 4A # cmp r0, 'J' 0x4A
 03 84 40 04 # orreq r4, r4, 0x4
@@ -157,6 +155,25 @@ e3 50 00 6A # cmp r0, 'j' 0x6A
 
 e3 14 00 04 # tst r4, 0x04
 @@ @@ @@ @@ # beq over "jump mode"
+# JUMP MODE: Read 2 hex chars, then output an unconditional branch w/ link 
+# to the address referenced by that label
+@@ @@ @@ @@ # bl ReadLabel
+# after ReadLabel, r1 contains the offset from the beginning of r11
+kk kk kk kk # ldr r0, [r11 + r1]
+# r0 now contains the address of the label
+# load r1 with a bl to the address; first byte is ed, followed by 3 bytes offset
+e3 a0 12 ed # mov r1, 0xed rrot 8
+e3 e0 c0 01 # mvn r12, 0x1 # set r12 to -2 to account for instr prefetch
+kk kk kk kk # sub r13, r10, r0 # store in r13 the difference in bytes between
+                               # current address and the address of the label
+kk kk kk kk # mov r13, r13 rsr 4 # divide r13 by 4 to get difference in instructions
+kk kk kk kk # sub r12, r12, r13 # take away difference in insturctions
+kk kk kk kk # bic r12, ff rrot 8 # clear upper 8 bits of r12
+kk kk kk kk # orr r1, r1, r12
+# instruction made, now write to memory
+kk kk kk kk # str r1, [r10]
+kk kk kk kk # add r10, r10, 0x4
+@@ @@ @@ @@ # b, return to loading next symbol
 
 # Now wait for input, build up words and send back the last byte of each word
 # while writing that word to memory
@@ -211,4 +228,22 @@ e2 40 00 30 # sub r0, r0, 0x30
 e3 80 00 20 # orr r0, r0, 0x20
 # assume lowercase letter
 e2 40 00 57 # sub r0, r0, 0x57
-# bx rl
+e1 2f ff 1e # bx lr
+
+# ReadLabel function
+e5 98 00 00 # ldr r0, [r8]
+e3 10 00 01 # tst r0, 0x01
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+e5 99 00 00 # ldr r0, [r9]
+@@ @@ @@ @@ # bl ASCIItoInt
+e3 a0 1d 02 # lsl r1, r0, 0x4
+# read second char
+e5 98 00 00 # ldr r0, [r8]
+e3 10 00 01 # tst r0, 0x01
+0a ff ff fc # beq -4 bytes (2 back to ldr + 2 from prefetch)
+e5 99 00 00 # ldr r0, [r9]
+@@ @@ @@ @@ # bl ASCIItoInt
+e1 80 10 01 # orr r1, r0, r1
+# r1 now contains the label name, multiply by 4 to get address for store/load
+e3 a1 1d 01 # lsl r1, r1, 0x2 # shift left by 2 == mul by 4
+e1 2f ff 1e # bx lr
