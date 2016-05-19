@@ -1,0 +1,48 @@
+# This file is edited to closely mimic the ledclear.casm file in pure hex
+# The ledclear.hex version is much more easy to understand.
+
+# ledclear.casm is a test of the labelling additions of cherryasm,
+# and all ldr r1, [r0] instructions in the file are replaced by a jump-to-label
+# This is replicated here.
+
+ea 00 00 01 # b over 'labelled function'
+# "x55"
+e5 90 10 00 # ldr r1, [r0]
+e1 2f ff 1e # bx lr
+
+# load 3f200010 into r0 using immediate addressing
+e3 a0 04 3f # mov r0,     0x3f000000
+e2 80 06 02 # add r0, r0, 0x00200000
+e2 80 00 10 # add r0, r0, 0x00000010
+
+# load the value at the address in r0 into r1
+eb ff ff f9 # bl to offset, 'call' x55
+
+# modify; first BIC (i.e. AND NOT), then OR
+e3 c1 16 0e # bic r1, 0x00E00000
+e3 81 16 02 # orr r1, 0x00200000
+
+# store the value in r1 into the address in r0
+e5 80 10 00 # str r1, [r0]
+
+# subtract 4 from r0 to leave 0x3f20000c
+e2 40 00 04 # sub r0, 0x00000004
+
+# load again then modify and save
+e5 90 10 00 # ldr r1, [r0]
+e3 a0 20 07 # mov r2, 0x07
+e1 c1 17 82 # bic r1, (r2 << 15)
+e3 81 19 02 # orr r1, 0x00008000
+e5 80 10 00 # str r1, [r0]
+
+# now place the other bits into the gpclr1 register at 0x3F20002C
+# set r0 to 0x3F20002C by adding 20
+e2 80 00 20 # add r0, 0x00000020
+e3 a0 20 80 # mov r2, 0x80
+e1 a0 14 02 # mov r1, (r2 << 8)
+eb ff ff ec # bl to offset, 'call' x55
+
+e3 a0 10 08 # mov r1, 0x8
+eb ff ff ea # bl to offset, 'call' x55
+
+ea ff ff fe # b 0x00, loop forever
