@@ -5,7 +5,7 @@
 # and commands of the form jAB which jump to those points in the file using a
 # bl instruction.
 
-ea 00 00 13 # b over functions
+ea 00 00 1e # b over functions
 
 # x00 # ASCIItoInt function
 e3 50 00 39 # cmp r0, 0x39 ('9')
@@ -32,7 +32,7 @@ e5 99 00 00 # ldr r0, [r9]
 eb ff ff ed # j00 # bl ASCIItoInt
 e1 80 10 01 # orr r1, r0, r1
 # r1 now contains the label name, multiply by 4 to get address for store/load
-e3 a1 1d 01 # lsl r1, r1, 0x2 # shift left by 2 == mul by 4
+e1 a0 11 01 # lsl r1, r1, 0x2 # shift left by 2 == mul by 4
 e1 2f ff 1e # bx lr
 
 # x02 # UARTRead Function
@@ -43,7 +43,6 @@ e5 99 00 00 # ldr r0, [r9]
 e1 2f ff 1e # bx lr
 
 # x03 # UARTWrite Function
-# >>> ALSO CLOBBERS r1 <<< #
 e5 98 10 00 # ldr r1, [r8]
 e3 11 00 20 # tst r1, 0x20
 0a ff ff fc # beq -2 bytes (2 back to ldr + 2 from prefetch)
@@ -148,16 +147,15 @@ e2 89 90 40 # add r9, r9, 0x00000040
 e2 89 80 14 # add r8, r9, 0x14
 
 # wait for 0x2 to start
-eb ff ff @@ # j02 # bl UARTRead
+eb ff ff af # j02 # bl UARTRead
 e3 50 00 02 # cmp r0, 0x2
-1a ff ff fd # beq -2
+1a ff ff fc # beq -2
 
-# read from uart - uart has input when AUX_MU_LSR_REG & 0x01
-eb ff ff @@ # j02 # bl UARTRead
+eb ff ff ac # j02 # bl UARTRead
 
 # check for 0x3 which we take to mean "goto address in r7 and start executing"
 e3 50 00 03 # cmp r0, 0x03
-0a 00 00 @@ # branch forward to end of this file for branch setup
+0a 00 00 32 # branch forward to end of this file for branch setup
 
 e3 50 00 23 # cmp r0, '#' 0x23
 03 84 40 01 # orreq r4, r4, 0x1
@@ -167,7 +165,7 @@ e3 14 00 01 # tst r4, 0x01
 # COMMENT MODE - check for end of line, else go back for more input
 e3 50 00 0a # cmp r0, '\n' (0xa)
 03 c4 40 01 # biceq r4, 0x1 # if '\n' end comment mode
-ea ff ff @@ # b back to get more input
+ea ff ff f5 # b back to get more input
 
 e3 50 00 58 # cmp r0, 'X' 0x58
 03 84 40 02 # orreq r4, r4, 0x2
@@ -175,12 +173,12 @@ e3 50 00 78 # cmp r0, 'x' 0x78
 03 84 40 02 # orreq r4, r4, 0x2
 
 e3 14 00 02 # tst r4, 0x02
-0a 00 00 02 # beq over "label mode"
+0a 00 00 03 # beq over "label mode"
 # LABEL MODE - Read two hex chars and add them to the label table
-ea ff ff d0 # j01 # bl ReadLabel
+eb ff ff 8e # j01 # bl ReadLabel
 e7 8b a0 01 # str r10, [r11 + r1]
 e3 c4 40 02 # bic r4, 0x2
-ea ff ff @@ # b back to read procedure
+ea ff ff eb # b back to read procedure
 
 e3 50 00 4A # cmp r0, 'J' 0x4A
 03 84 40 04 # orreq r4, r4, 0x4
@@ -188,36 +186,38 @@ e3 50 00 6A # cmp r0, 'j' 0x6A
 03 84 40 04 # orreq r4, r4, 0x4
 
 e3 14 00 04 # tst r4, 0x04
-ea 00 00 @@ # beq over "jump mode"
+0a 00 00 0d # beq over "jump mode"
 # JUMP MODE: Read 2 hex chars, then output an unconditional branch w/ link 
 # to the address referenced by that label
-eb ff ff @@ # j01 # bl ReadLabel
+eb ff ff 84 # j01 # bl ReadLabel
 # after ReadLabel, r1 contains the offset from the beginning of r11
-kk kk kk kk # ldr r0, [r11 + r1]
+e7 9b 00 01 # ldr r0, [r11 + r1]
 # r0 now contains the address of the label
 # load r1 with a bl to the address; first byte is eb, followed by 3 bytes offset
-e3 a0 12 eb # mov r1, 0xeb rrot 8
+e3 a0 14 eb # mov r1, 0xeb rrot 8
 e3 e0 c0 01 # mvn r12, 0x1 # set r12 to -2 to account for instr prefetch
-e2 46 d0 00 # sub r13, r6, r0
-e2 4c c0 0d # sub r12, r12, r13
+e0 46 d0 00 # sub r13, r6, r0
+e0 4c c0 0d # sub r12, r12, r13
 # r12 now contains offset in bytes, divide by 4 by shifting right 2
 e1 a0 c1 2c # lsr r12, 2
 e3 cc c4 ff # bic r12, r12, 0xff000000
-e3 81 10 0c # orr r1, r1, r12
+e1 81 10 0c # orr r1, r1, r12
 # r1 contains full bl instruction, write to memory
 e5 86 10 00 # str r1, [r6]
 e2 86 60 04 # add r6, r6, 0x4
-ea ff ff @@ # b, return to loading next symbol
+e2 8a a0 04 # add r10, r10, 0x4
+e3 c4 40 04 # bic r4, 0x2
+ea ff ff d7 # b, return to loading next symbol
 
 # Now wait for input, build up words and send back the last byte of each word
 # while writing that word to memory
 
 # Ignore below 0x30 ('0')
 e3 50 00 30 # cmp r0, '0' (0x30)
-ba ff ff @@ # blt "read from input"
+ba ff ff d5 # blt "read from input"
 
 # call ASCIItoInt
-eb ff ff @@ # j00 # bl ASCIItoInt
+eb ff ff 74 # j00 # bl ASCIItoInt
 
 # now write into register r2 , shifting by r5
 e1 a0 05 10 # lsl r0, r0, r5
@@ -229,13 +229,13 @@ e3 a0 50 1c # mov r5, 0x1c = 28
 e5 86 20 00 # str r2, [r6]
 e1 a0 00 02 # mov r0, r2
 # send the character back over uart for immediate feedback
-eb ff ff @@ # j02 # Call UARTWrite
+eb ff ff 7f # j02 # Call UARTWrite
 e3 a0 20 00 # mov r2, 0x00
 e2 86 60 04 # add r6, r6, 0x4
 ea 00 00 00 # skip 1 instr
 e2 45 50 04 # sub r5, r5, 0x4
 
-ea ff ff @@ # branch to beginning of read routine + 2 prefetch
+ea ff ff c7 # branch to beginning of read routine
 
 e1 2f ff 17 # bx r7
 ea ff ff fe # b 0x00, loop forever
