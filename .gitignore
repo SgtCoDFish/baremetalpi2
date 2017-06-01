@@ -4,4 +4,4 @@ build-*
 *.bin
 *.o
 *.elf
-
+*.swp
