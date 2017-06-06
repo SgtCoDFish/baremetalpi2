@@ -1,5 +1,9 @@
-# Writing in ARM7 Machine Code
-## Manual Instruction Assembly
+# ARM7 Machine Code
+Manual instruction assembly is a bit strange to see at first. This document certainly doesn't help; it's more of a notepad used while a few instructions were hand-assembled.
+
+Look at this [machine code hand-assembly lecture](http://www.ee.ic.ac.uk/pcheung/teaching/ee2_computing/lecture_9.pdf) for a more readable example.
+
+
 ### ledclear.hex
 1 nibble condition + 00 + bit flag (immediate?) + opcode + bit flag (set cond?) + reg 1 + reg dest + operand 2
 
