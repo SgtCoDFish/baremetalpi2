@@ -7,13 +7,14 @@ all: kernel7.img
 clean:
 	rm -f *.o
 	rm -f *.img
+	rm -f *.elf
 
 start.o:
 	$(ARMPREFIX)-as -c start.s -o start.o
 
-asm.o:
-	$(ARMPREFIX)-gcc $(CARGS) -c asm.c -o asm.o
+hex.o:
+	$(ARMPREFIX)-gcc $(CARGS) -c hex.c -o hex.o
 
-kernel7.img: linkfile start.o asm.o
-	$(ARMPREFIX)-ld start.o asm.o -T linkfile -o out.elf
+kernel7.img: linkfile start.o hex.o
+	$(ARMPREFIX)-ld start.o hex.o -T linkfile -o out.elf
 	$(ARMPREFIX)-objcopy out.elf -O binary kernel7.img
