@@ -27,5 +27,4 @@ periph.o : periph.c
 
 ssd1306a.bin : memmap start.o periph.o ssd1306a.o 
 	$(ARMGNU)-ld start.o periph.o ssd1306a.o -T memmap -o ssd1306a.elf
-	$(ARMGNU)-objdump -D ssd1306a.elf > ssd1306a.list
 	$(ARMGNU)-objcopy ssd1306a.elf -O binary ssd1306a.bin

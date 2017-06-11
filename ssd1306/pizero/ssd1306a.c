@@ -355,13 +355,13 @@ void ClearScreen ( void )
 //------------------------------------------------------------------------
 int notmain ( void )
 {
-	unsigned int ra;
+	unsigned int ra = 0u;
 
 	uart_init();
 	hexstring(0x12345678);
 
-	PUT32(ARM_TIMER_CTL,0x00000000);
-	PUT32(ARM_TIMER_CTL,0x00000200); // enable free running counter
+	PUT32(ARM_TIMER_CTL, 0x00000000);
+	PUT32(ARM_TIMER_CTL, 0x00000200); // enable free running counter
 
 	ra=GET32(GPFSEL0);
 	ra&=~(7<<(SDA*3));
@@ -376,20 +376,7 @@ int notmain ( void )
 	i2c_delay();
 	i2c_delay();
 
-	//find who acks
-	for(ra=0;ra<0x100;ra+=2)
-	{
-		unsigned int rb;
-		//hexstrings(ra);
-		i2c_start();
-		rb=i2c_write_byte(ra|0);
-		i2c_stop();
-		//hexstring(rb);
-		if(rb==0) hexstring(ra);
-	}
-	//0x78 is the address
-
-	// Display Init sequence for 64x48 OLED module
+	// Display init sequence 
 	send_command(DISPLAYOFF);           // 0xAE
 	send_command(SETDISPLAYCLOCKDIV);   // 0xD5
 	send_command(0x80);                 // the suggested ratio 0x80
@@ -418,17 +405,28 @@ int notmain ( void )
 	send_command(DISPLAYON);                //--turn on oled panel
 	//send_command(DISPLAYALLON);
 
-	show_text(0,"HELLO");
-	show_text(1,"World!");
-	show_text_hex(2,0x12345678);
-	show_text_hex(3,0xABCDEF00);
-	for(ra=0;ra<=0x200;ra++) show_text_hex(5,ra);
+	const unsigned int instr1 = GET32(0x8000); // get the instruction at 0x8000 - should be e3a0d902
+	const unsigned int instr2 = GET32(0x8004); // get the instruction at 0x8004 - should be eb0001ba
+	show_text(0, "Hello world!");
+	show_text_hex(2, instr1);
+	show_text_hex(3, instr2);
+
+	for(ra = 0; ra <= 0x200; ra++) {
+		show_text_hex(7, ra);
+	}
 
 	//ClearScreen();
-	for(ra=0;ra<8;ra++) hex_screen_history[ra]=0;
-	for(ra=0;ra<0x1000;ra++) hex_screen(ra);
+	/*
+	for(ra=0;ra<8;ra++) {
+		hex_screen_history[ra]=0;
+	}
+
+	for(ra=0;ra<0x1000;ra++) {
+		hex_screen(ra);
+	}
+	*/
 
 	hexstring(0x12341234);
 
-	return(0);
+	return 0;
 }
