@@ -1,0 +1,2 @@
+# this doesn't work yet but it seems to be closer
+qemu-system-arm -M raspi2 -nographic -cpu arm1176 -sd boot.img -kernel ledclear.hex.bin -m 1G
